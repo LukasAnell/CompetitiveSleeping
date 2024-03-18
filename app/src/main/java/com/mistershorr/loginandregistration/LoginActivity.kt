@@ -35,11 +35,11 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setListeners()
-
+        title = "CompetitiveSleeping"
         // Android apps:
         // the context argument is is an instance of android.content.Context.
         // For instance, it may be your Android application main activity.
-        Backendless.initApp(this, "application-Id", "API-key" )
+        Backendless.initApp(this, Constants.applicationId, Constants.APIKey)
     }
 
     private fun setListeners() {
