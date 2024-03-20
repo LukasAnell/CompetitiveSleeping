@@ -36,12 +36,21 @@ object RegistrationUtil {
     // at least one capital letter
     // both passwords match
     // not empty
-    fun validatePassword(password : String, confirmPassword: String) : Boolean {
+    fun validatePassword(password: String, confirmPassword: String) : Boolean {
         if(password.length < 8 || confirmPassword.length < 8) {
             return false
         }
 
         password.count { it.isDigit() } > 0
+        password.count { it.isUpperCase() } > 0
+
+        if(password != confirmPassword) {
+            return false
+        }
+
+        if(password.isEmpty() || confirmPassword.isEmpty()) {
+            return false
+        }
 
         return true
     }

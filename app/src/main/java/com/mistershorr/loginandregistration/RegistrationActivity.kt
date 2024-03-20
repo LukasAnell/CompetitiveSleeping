@@ -2,19 +2,30 @@ package com.mistershorr.loginandregistration
 
 import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.backendless.Backendless
+import com.backendless.BackendlessUser
+import com.backendless.async.callback.AsyncCallback
+import com.backendless.exceptions.BackendlessFault
 import com.mistershorr.loginandregistration.databinding.ActivityRegistrationBinding
 
-class RegistrationActivity : AppCompatActivity() {
 
+class RegistrationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRegistrationBinding
+
+    companion object {
+        const val TAG = "RegistrationActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityRegistrationBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        Backendless.initApp(this, Constants.APPLICATION_ID, Constants.API_KEY)
 
         // retrieve any information from the intent using the extras keys
         val username = intent.getStringExtra(LoginActivity.EXTRA_USERNAME) ?: ""
@@ -31,22 +42,58 @@ class RegistrationActivity : AppCompatActivity() {
             val password = binding.editTextTextPassword.text.toString()
             val confirm = binding.editTextRegistrationConfirmPassword.text.toString()
             val username = binding.editTextRegistrationUsername.text.toString()
-            if(RegistrationUtil.validatePassword(password, confirm) &&
-                RegistrationUtil.validateUsername(username))  {  // && do the rest of the validations
-                // apply lambda will call the functions inside it on the object
-                // that apply is called on
-                val resultIntent = Intent().apply {
-                    // apply { putExtra() } is doing the same thing as resultIntent.putExtra()
-                    putExtra(
-                        LoginActivity.EXTRA_USERNAME,
-                        binding.editTextRegistrationUsername.text.toString()
-                    )
-                    putExtra(LoginActivity.EXTRA_PASSWORD, password)
-                }
-                setResult(Activity.RESULT_OK, resultIntent)
-                finish()
+            val email = binding.editTextRegistrationEmail.text.toString()
+            val name = binding.editTextRegistrationName.text.toString()
+            if(validateFields(email, name, username, password, confirm))  {  // && do the rest of the validations
+                val user = BackendlessUser()
+                user.setProperty("email", email)
+                user.setProperty("name", name)
+                user.setProperty("username", username)
+                user.password = password
+
+                Backendless.UserService.register(user, object: AsyncCallback<BackendlessUser?> {
+                    override fun handleResponse(registeredUser: BackendlessUser?) {
+                        Log.d(TAG, "handleResponse: ${registeredUser?.getProperty("username")} has registered.")
+
+                        val resultIntent = Intent().apply {
+                            putExtra(LoginActivity.EXTRA_PASSWORD, password)
+                            putExtra(LoginActivity.EXTRA_USERNAME, username)
+                        }
+                        setResult(Activity.RESULT_OK, resultIntent)
+                        finish()
+                    }
+
+                    override fun handleFault(fault: BackendlessFault) {
+                        Log.d(TAG, "handleFault: Code ${fault.code}\n${fault.detail}")
+                        Toast.makeText(this@RegistrationActivity, fault.message, Toast.LENGTH_LONG).show()
+                    }
+                })
             }
         }
+    }
 
+    private fun validateFields(email: String, name: String, username: String, password: String, confirm: String): Boolean {
+        val validateEmail = RegistrationUtil.validateEmail(email)
+        val validateName = RegistrationUtil.validateName(name)
+        val validateUsername = RegistrationUtil.validateUsername(username)
+        val validatePassword = RegistrationUtil.validatePassword(password, confirm)
+
+        if(!validateEmail) {
+            Toast.makeText(this, "Invalid Email!", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if(!validateName) {
+            Toast.makeText(this, "Invalid Name!", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if(!validateUsername) {
+            Toast.makeText(this, "Invalid Username!", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if(!validatePassword) {
+            Toast.makeText(this, "Invalid Password!", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
     }
 }

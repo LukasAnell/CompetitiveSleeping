@@ -28,10 +28,10 @@ class LoginActivity : AppCompatActivity() {
     val startRegistrationForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val intent = result.data
+            val intent = result.data!!
             // Handle the Intent to do whatever we need with the returned info
-            binding.editTextLoginUsername.setText(intent?.getStringExtra(EXTRA_USERNAME))
-            binding.editTextLoginPassword.setText(intent?.getStringExtra(EXTRA_PASSWORD))
+            binding.editTextLoginUsername.setText(intent.getStringExtra(EXTRA_USERNAME))
+            binding.editTextLoginPassword.setText(intent.getStringExtra(EXTRA_PASSWORD))
         }
     }
     private lateinit var binding: ActivityLoginBinding
