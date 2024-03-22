@@ -13,6 +13,7 @@ import com.backendless.BackendlessUser
 import com.backendless.async.callback.AsyncCallback
 import com.backendless.exceptions.BackendlessFault
 import com.mistershorr.loginandregistration.databinding.ActivityLoginBinding
+import com.mistershorr.loginandregistration.sleeping.SleepListActivity
 
 
 class LoginActivity : AppCompatActivity() {
@@ -71,6 +72,8 @@ class LoginActivity : AppCompatActivity() {
                 object : AsyncCallback<BackendlessUser?> {
                     override fun handleResponse(user: BackendlessUser?) {
                         Log.d(TAG, "handleResponse: ${user?.getProperty("username")} has logged in.")
+                        val sleepIntent = Intent(this@LoginActivity, SleepListActivity::class.java)
+                        startActivity(sleepIntent)
                     }
 
                     override fun handleFault(fault: BackendlessFault) {
