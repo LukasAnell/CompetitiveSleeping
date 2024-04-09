@@ -3,13 +3,15 @@ package com.mistershorr.loginandregistration.sleeping
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.backendless.Backendless
 import com.backendless.async.callback.AsyncCallback
 import com.backendless.exceptions.BackendlessFault
 import com.backendless.persistence.DataQueryBuilder
 import com.mistershorr.loginandregistration.LoginActivity
+import com.mistershorr.loginandregistration.SleepAdapter
 import com.mistershorr.loginandregistration.databinding.ActivitySleepListBinding
-import java.util.Date
 
 
 class SleepListActivity : AppCompatActivity() {
@@ -18,22 +20,31 @@ class SleepListActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivitySleepListBinding
+    private lateinit var sleepList: List<Sleep>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)
         setContentView(binding.root)
         loadDataFromBackendless()
+    }
 
+    private fun refreshList() {
+        val serverListAdapter = SleepAdapter(sleepList)
 
+        val recyclerView: RecyclerView = binding.recyclerViewSleepList
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = serverListAdapter
     }
 
     private fun deleteSleepRecord() {
         val sleepRecord = Sleep(
-            Date(),
-            Date(),
-            Date(),
-            9,
-            "very nice sleep and good dreams too"
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            5,
+            "very okay",
+            null,
+            null
         )
         sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
 
@@ -42,30 +53,30 @@ class SleepListActivity : AppCompatActivity() {
                 Backendless.Data.of(Sleep::class.java).remove(sleepRecord,
                     object : AsyncCallback<Long?> {
                         override fun handleResponse(response: Long?) {
-                            // Contact has been deleted. The response is the
-                            // time in milliseconds when the object was deleted
+                            Log.d(TAG, "Object Deleted")
                         }
 
                         override fun handleFault(fault: BackendlessFault) {
-                            // an error has occurred, the error code can be
-                            // retrieved with fault.getCode()
+                            Log.d(TAG, fault.message)
                         }
                     })
             }
 
             override fun handleFault(fault: BackendlessFault) {
-                // an error has occurred, the error code can be retrieved with fault.getCode()
+                Log.d(TAG, fault.message)
             }
         })
     }
 
     private fun updateSleepRecord() {
         val sleepRecord = Sleep(
-            Date(),
-            Date(),
-            Date(),
-            9,
-            "very nice sleep and good dreams too"
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            5,
+            "very okay",
+            null,
+            null
         )
         sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
 
@@ -93,11 +104,13 @@ class SleepListActivity : AppCompatActivity() {
 
     private fun addSleepRecord() {
         val sleepRecord = Sleep(
-            Date(),
-            Date(),
-            Date(),
-            9,
-            "very nice sleep and good dreams too"
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            System.currentTimeMillis(),
+            5,
+            "very okay",
+            null,
+            null
         )
         sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
 
@@ -120,9 +133,11 @@ class SleepListActivity : AppCompatActivity() {
         val whereClause = "ownerId = '$userId'"
         val queryBuilder = DataQueryBuilder.create()
         queryBuilder.whereClause = whereClause
-        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object: AsyncCallback<List<Sleep?>> {
-            override fun handleResponse(sleepList: List<Sleep?>?) {
-                Log.d(LoginActivity.TAG, "handleResponse: $sleepList")
+        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object: AsyncCallback<List<Sleep>> {
+            override fun handleResponse(list: List<Sleep>?) {
+                Log.d(LoginActivity.TAG, "handleResponse: $list")
+                sleepList = list!!
+                refreshList()
             }
 
             override fun handleFault(fault: BackendlessFault) {

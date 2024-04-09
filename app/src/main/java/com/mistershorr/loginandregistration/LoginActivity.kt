@@ -42,7 +42,6 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        title = "CompetitiveSleeping"
         Backendless.initApp(this, Constants.APPLICATION_ID, Constants.API_KEY)
 
         setListeners()
