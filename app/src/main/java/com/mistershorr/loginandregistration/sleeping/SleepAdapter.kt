@@ -1,25 +1,28 @@
 package com.mistershorr.loginandregistration
 
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.backendless.Backendless
+import com.backendless.async.callback.AsyncCallback
+import com.backendless.exceptions.BackendlessFault
 import com.mistershorr.loginandregistration.sleeping.Sleep
 import com.mistershorr.loginandregistration.sleeping.SleepDetailActivity
+import com.mistershorr.loginandregistration.sleeping.SleepListActivity
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
+class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
 
     companion object {
         const val TAG = "SleepAdapter"
@@ -46,11 +49,9 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
         return holder
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val sleep = dataSet[position]
+        val sleep = sleepList[position]
         val context = holder.layout.context
-
 
         val formatter = DateTimeFormatter.ofPattern("yyy-MM-dd")
         val sleepDate = LocalDateTime.ofEpochSecond(sleep.sleepDateMillis / 1000, 0,
@@ -85,9 +86,58 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
             }
             context.startActivity(intent)
         }
+
+        holder.layout.isLongClickable = true
+        holder.layout.setOnLongClickListener {
+            val popMenu = PopupMenu(context, holder.layout)
+            popMenu.inflate(R.menu.menu_sleep_list_context)
+            popMenu.setOnMenuItemClickListener {
+                when(it.itemId) {
+                    R.id.menu_sleeplist_delete -> {
+                        deleteFromBackendless(position)
+                        true
+                    }
+                    else -> true
+                }
+            }
+            popMenu.show()
+            true
+        }
+    }
+
+    private fun deleteFromBackendless(position: Int) {
+        Log.d("SleepAdapter", "deleteFromBackendless: Trying to delete ${sleepList[position]}")
+        // put in the code to delete the item using the callback from Backendless
+        // in the handleResponse, we'll need to also delete the item from the sleepList
+        // and make sure that the recyclerview is updated
+
+        val sleepRecord = sleepList[position]
+        sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
+
+        Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep?> {
+            override fun handleResponse(sleepRecord: Sleep?) {
+                Backendless.Data.of(Sleep::class.java).remove(sleepRecord,
+                    object : AsyncCallback<Long?> {
+                        override fun handleResponse(response: Long?) {
+                            Log.d(SleepListActivity.TAG, "Object Deleted")
+                            sleepList.drop(position)
+                            notifyDataSetChanged()
+                        }
+
+                        override fun handleFault(fault: BackendlessFault) {
+                            Log.d(SleepListActivity.TAG, fault.message)
+                        }
+                    }
+                )
+            }
+
+            override fun handleFault(fault: BackendlessFault) {
+                Log.d(SleepListActivity.TAG, fault.message)
+            }
+        })
     }
 
     override fun getItemCount(): Int {
-        return dataSet.size
+        return sleepList.size
     }
 }

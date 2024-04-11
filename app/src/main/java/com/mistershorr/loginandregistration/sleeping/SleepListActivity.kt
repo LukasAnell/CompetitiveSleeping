@@ -1,5 +1,6 @@
 package com.mistershorr.loginandregistration.sleeping
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,11 @@ class SleepListActivity : AppCompatActivity() {
         binding = ActivitySleepListBinding.inflate(layoutInflater)
         setContentView(binding.root)
         loadDataFromBackendless()
+
+        binding.floatingActionButtonAddSleepSleepList.setOnClickListener {
+            val intent = Intent(this, SleepDetailActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun refreshList() {
@@ -34,38 +40,6 @@ class SleepListActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = binding.recyclerViewSleepList
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = serverListAdapter
-    }
-
-    private fun deleteSleepRecord() {
-        val sleepRecord = Sleep(
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            5,
-            "very okay",
-            null,
-            null
-        )
-        sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
-
-        Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep?> {
-            override fun handleResponse(sleepRecord: Sleep?) {
-                Backendless.Data.of(Sleep::class.java).remove(sleepRecord,
-                    object : AsyncCallback<Long?> {
-                        override fun handleResponse(response: Long?) {
-                            Log.d(TAG, "Object Deleted")
-                        }
-
-                        override fun handleFault(fault: BackendlessFault) {
-                            Log.d(TAG, fault.message)
-                        }
-                    })
-            }
-
-            override fun handleFault(fault: BackendlessFault) {
-                Log.d(TAG, fault.message)
-            }
-        })
     }
 
     private fun updateSleepRecord() {
@@ -113,7 +87,6 @@ class SleepListActivity : AppCompatActivity() {
             null
         )
         sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
-
 
         // save object asynchronously
         Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep?> {
