@@ -10,7 +10,7 @@ data class Sleep(
     var bedMillis: Long = System.currentTimeMillis(),
     var sleepDateMillis: Long = System.currentTimeMillis(),
     var quality: Int = 5,
-    var notes: String? = null,
+    var notes: String? = "",
     var ownerId: String? = null,
     var objectId: String? = null,
 ): Parcelable

@@ -21,7 +21,7 @@ class SleepListActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivitySleepListBinding
-    private lateinit var sleepList: List<Sleep>
+    private lateinit var sleepList: MutableList<Sleep>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)
@@ -40,6 +40,7 @@ class SleepListActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = binding.recyclerViewSleepList
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = serverListAdapter
+        serverListAdapter.notifyDataSetChanged()
     }
 
     private fun updateSleepRecord() {
@@ -106,8 +107,8 @@ class SleepListActivity : AppCompatActivity() {
         val whereClause = "ownerId = '$userId'"
         val queryBuilder = DataQueryBuilder.create()
         queryBuilder.whereClause = whereClause
-        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object: AsyncCallback<List<Sleep>> {
-            override fun handleResponse(list: List<Sleep>?) {
+        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object: AsyncCallback<MutableList<Sleep>> {
+            override fun handleResponse(list: MutableList<Sleep>?) {
                 Log.d(LoginActivity.TAG, "handleResponse: $list")
                 sleepList = list!!
                 refreshList()

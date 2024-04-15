@@ -22,7 +22,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
+class SleepAdapter (var sleepList: MutableList<Sleep>): RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
 
     companion object {
         const val TAG = "SleepAdapter"
@@ -95,6 +95,7 @@ class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapt
                 when(it.itemId) {
                     R.id.menu_sleeplist_delete -> {
                         deleteFromBackendless(position)
+                        notifyDataSetChanged()
                         true
                     }
                     else -> true
@@ -120,7 +121,7 @@ class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapt
                     object : AsyncCallback<Long?> {
                         override fun handleResponse(response: Long?) {
                             Log.d(SleepListActivity.TAG, "Object Deleted")
-                            sleepList.drop(position)
+                            sleepList.removeAt(position)
                             notifyDataSetChanged()
                         }
 
@@ -129,6 +130,7 @@ class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapt
                         }
                     }
                 )
+                notifyDataSetChanged()
             }
 
             override fun handleFault(fault: BackendlessFault) {
@@ -137,7 +139,5 @@ class SleepAdapter (var sleepList: List<Sleep>): RecyclerView.Adapter<SleepAdapt
         })
     }
 
-    override fun getItemCount(): Int {
-        return sleepList.size
-    }
+    override fun getItemCount() = sleepList.size
 }

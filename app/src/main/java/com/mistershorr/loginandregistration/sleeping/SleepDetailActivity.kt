@@ -1,16 +1,20 @@
 package com.mistershorr.loginandregistration.sleeping
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.backendless.Backendless
 import com.backendless.async.callback.AsyncCallback
 import com.backendless.exceptions.BackendlessFault
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.mistershorr.loginandregistration.SleepAdapter
 import com.mistershorr.loginandregistration.databinding.ActivitySleepDetailBinding
 import java.time.Instant
 import java.time.LocalDateTime
@@ -37,13 +41,28 @@ class SleepDetailActivity : AppCompatActivity() {
 
         sleep = intent.getParcelableExtra(EXTRA_SLEEP)
         if(sleep == null) {
+            val zoneId = ZoneId.systemDefault()
             bedTime = LocalDateTime.now()
             wakeTime = bedTime.plusHours(8)
 
             binding.buttonSleepDetailSave.setOnClickListener {
                 Log.d(TAG, "try to save new")
-                val newSleepRecord = Sleep(
 
+                val newSleepRecord = Sleep(
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailWakeTime.drawingTime), zoneId)
+                        .toInstant(UTC)
+                        .toEpochMilli(),
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailBedTime.drawingTime), zoneId)
+                        .toInstant(UTC)
+                        .toEpochMilli(),
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailBedTime.drawingTime), zoneId)
+                        .toLocalDate()
+                        .atStartOfDay()
+                        .toInstant(UTC)
+                        .toEpochMilli(),
+                    binding.ratingBarSleepDetailQuality.rating.toInt(),
+                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+                    Backendless.UserService.CurrentUser().userId
                 )
                 addSleepRecord(newSleepRecord)
             }
@@ -59,21 +78,24 @@ class SleepDetailActivity : AppCompatActivity() {
             binding.editTextTextMultiLineSleepDetailNotes.setText(sleep!!.notes)
 
             binding.buttonSleepDetailSave.setOnClickListener {
-                Log.d(TAG, "try to save new")
+                Log.d(TAG, "try to update")
                 val newSleepRecord = Sleep(
-                    LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep!!.wakeMillis), zoneId)
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailWakeTime.drawingTime), zoneId)
                         .toInstant(UTC)
                         .toEpochMilli(),
-                    LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep!!.bedMillis), zoneId)
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailBedTime.drawingTime), zoneId)
                         .toInstant(UTC)
                         .toEpochMilli(),
-                    LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep!!.bedMillis), zoneId)
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(binding.buttonSleepDetailBedTime.drawingTime), zoneId)
                         .toLocalDate()
                         .atStartOfDay()
                         .toInstant(UTC)
-                        .toEpochMilli()
+                        .toEpochMilli(),
+                    binding.ratingBarSleepDetailQuality.rating.toInt(),
+                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+                    Backendless.UserService.CurrentUser().userId
                 )
-                addSleepRecord(newSleepRecord)
+                updateSleepRecord(newSleepRecord)
             }
         }
 
@@ -139,9 +161,10 @@ class SleepDetailActivity : AppCompatActivity() {
         newRecord.ownerId = Backendless.UserService.CurrentUser().userId
 
         // save object asynchronously
-        Backendless.Data.of(Sleep::class.java).save(newRecord, object : AsyncCallback<Sleep?> {
+        Backendless.Data.of(Sleep::class.java).save(newRecord, object: AsyncCallback<Sleep?> {
             override fun handleResponse(response: Sleep?) {
                 Log.d(SleepListActivity.TAG, "response: $response")
+                finish()
             }
 
             override fun handleFault(fault: BackendlessFault) {
@@ -162,7 +185,8 @@ class SleepDetailActivity : AppCompatActivity() {
                 Backendless.Data.of(Sleep::class.java)
                     .save(sleepRecord, object : AsyncCallback<Sleep?> {
                         override fun handleResponse(response: Sleep?) {
-                            // Contact instance has been updated
+                            Log.d(SleepListActivity.TAG, "response: $response")
+                            finish()
                         }
 
                         override fun handleFault(fault: BackendlessFault) {
