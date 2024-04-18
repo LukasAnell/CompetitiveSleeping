@@ -13,12 +13,10 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import com.mistershorr.loginandregistration.databinding.ActivitySleepDetailBinding
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZoneOffset.UTC
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class SleepDetailActivity : AppCompatActivity() {
@@ -27,8 +25,8 @@ class SleepDetailActivity : AppCompatActivity() {
         const val EXTRA_SLEEP = "sleepyTime"
     }
     private lateinit var binding: ActivitySleepDetailBinding
-    lateinit var bedTime: LocalDateTime
-    lateinit var wakeTime: LocalDateTime
+    private lateinit var bedTime: LocalDateTime
+    private lateinit var wakeTime: LocalDateTime
     private var sleep: Sleep? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,88 +34,36 @@ class SleepDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sleep = intent.getParcelableExtra(EXTRA_SLEEP)
-        if(sleep == null) {
-            val zoneId = ZoneId.systemDefault()
-            bedTime = LocalDateTime.now()
-            wakeTime = bedTime.plusHours(8)
 
-            binding.buttonSleepDetailSave.setOnClickListener {
-                Log.d(TAG, "try to save new")
+        val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
+        val dateFormatter = DateTimeFormatter.ofPattern("EEEE MMM dd, yyyy")
+        val zoneId = ZoneId.systemDefault()
 
-                val dateEpochTime = dateToEpoch(binding.buttonSleepDetailDate.text.toString())
-                wakeTime = Instant.ofEpochMilli(dateEpochTime + timeToEpoch(binding.buttonSleepDetailWakeTime.text.toString())).atZone(zoneId).toLocalDateTime()
-                bedTime = Instant.ofEpochMilli(dateEpochTime + timeToEpoch(binding.buttonSleepDetailBedTime.text.toString())).atZone(zoneId).toLocalDateTime()
-
-
-                val newSleepRecord = Sleep(
-                    wakeTime
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    bedTime
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    bedTime
-                        .toLocalDate()
-                        .atStartOfDay()
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    binding.ratingBarSleepDetailQuality.rating.toInt(),
-                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
-                    Backendless.UserService.CurrentUser().userId
-                )
-                addSleepRecord(newSleepRecord)
-            }
-        } else {
-            var instant = Instant.ofEpochMilli(sleep!!.bedMillis)
-            val zoneId = ZoneId.systemDefault()
-            bedTime = instant.atZone(zoneId).toLocalDateTime()
-
-            instant = Instant.ofEpochMilli(sleep!!.wakeMillis)
-            wakeTime = instant.atZone(zoneId).toLocalDateTime()
-
-            binding.ratingBarSleepDetailQuality.rating = sleep!!.quality.toFloat()
-            binding.editTextTextMultiLineSleepDetailNotes.setText(sleep!!.notes)
-
-            binding.buttonSleepDetailSave.setOnClickListener {
-                Log.d(TAG, "try to update")
-
-                val dateEpochTime = dateToEpoch(binding.buttonSleepDetailDate.text.toString())
-
-                Log.d(TAG, "dateEpochTime: $dateEpochTime")
-
-                wakeTime = Instant.ofEpochMilli(dateEpochTime + timeToEpoch(binding.buttonSleepDetailWakeTime.text.toString())).atZone(zoneId).toLocalDateTime()
-                bedTime = Instant.ofEpochMilli(dateEpochTime + timeToEpoch(binding.buttonSleepDetailBedTime.text.toString())).atZone(zoneId).toLocalDateTime()
-
-                val newSleepRecord = Sleep(
-                    wakeTime
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    bedTime
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    bedTime
-                        .toLocalDate()
-                        .atStartOfDay()
-                        .toInstant(UTC)
-                        .toEpochMilli(),
-                    binding.ratingBarSleepDetailQuality.rating.toInt(),
-                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
-                    Backendless.UserService.CurrentUser().userId,
-                    sleep!!.objectId
-                )
-                updateSleepRecord(newSleepRecord)
+        binding.buttonSleepDetailSave.setOnClickListener {
+            if(sleep == null) {
+                saveSleep()
+            } else {
+                updateSleep(sleep!!)
             }
         }
 
-        val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
-        binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
-        binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
+        if(sleep == null) {
+            bedTime = LocalDateTime.now()
+            wakeTime = bedTime.plusHours(8)
 
-        Log.d(TAG, "wakeTime: ${binding.buttonSleepDetailWakeTime.text}")
-        Log.d(TAG, "bedTime: ${binding.buttonSleepDetailBedTime.text}")
+            binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
+            binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
+            binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+        } else {
+            bedTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep!!.bedMillis), zoneId)
+            wakeTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep!!.wakeMillis), zoneId)
 
-        val dateFormatter = DateTimeFormatter.ofPattern("EEEE MMM dd, yyyy")
-        binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+            binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
+            binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
+            binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+            binding.ratingBarSleepDetailQuality.rating = sleep!!.quality.toFloat()
+            binding.editTextTextMultiLineSleepDetailNotes.setText(sleep!!.notes)
+        }
 
         binding.buttonSleepDetailBedTime.setOnClickListener {
             setTime(bedTime, timeFormatter, binding.buttonSleepDetailBedTime)
@@ -171,22 +117,88 @@ class SleepDetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun timeToEpoch(time: String): Long {
-        val dateFormat = DateTimeFormatter.ofPattern("HH:mm a")
-        val localDateTime = LocalDateTime.parse(time, dateFormat)
-
+    private fun saveSleep() {
         val zoneId = ZoneId.systemDefault()
-        val zoneOffset = zoneId.rules.getOffset(Instant.now())
-        return localDateTime.toInstant(zoneOffset).toEpochMilli()
+
+        val wakeString = binding.buttonSleepDetailWakeTime.text.toString()
+        val bedString = binding.buttonSleepDetailBedTime.text.toString()
+        val dateString = binding.buttonSleepDetailDate.text.toString()
+
+        var wakeMillis = Instant.ofEpochMilli(timeToEpoch(wakeString, dateString))
+            .atZone(zoneId)
+            .toLocalDateTime()
+        val bedMillis = Instant.ofEpochMilli(timeToEpoch(bedString, dateString))
+            .atZone(zoneId)
+            .toLocalDateTime()
+
+        if (wakeMillis.isBefore(bedMillis)) {
+            wakeMillis = wakeMillis.plusDays(1)
+        }
+
+        val sleep = Sleep(
+            wakeMillis
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            bedMillis
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            bedMillis
+                .toLocalDate()
+                .atStartOfDay()
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            binding.ratingBarSleepDetailQuality.rating.toInt(),
+            binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+            Backendless.UserService.CurrentUser().userId
+        )
+
+        addSleepRecord(sleep)
     }
 
-    private fun dateToEpoch(date: String): Long {
-        val dateFormat = DateTimeFormatter.ofPattern("EEEE MMM dd, yyyy")
-        val parsedDate = LocalDate.parse(date, dateFormat)
-
+    private fun updateSleep(sleep: Sleep) {
         val zoneId = ZoneId.systemDefault()
-        val zoneOffset = zoneId.rules.getOffset(Instant.now())
-        return parsedDate.atStartOfDay().toInstant(zoneOffset).toEpochMilli()
+
+        val wakeString = binding.buttonSleepDetailWakeTime.text.toString()
+        val bedString = binding.buttonSleepDetailBedTime.text.toString()
+        val dateString = binding.buttonSleepDetailDate.text.toString()
+
+        var wakeMillis = Instant.ofEpochMilli(timeToEpoch(wakeString, dateString))
+            .atZone(zoneId)
+            .toLocalDateTime()
+        val bedMillis = Instant.ofEpochMilli(timeToEpoch(bedString, dateString))
+            .atZone(zoneId)
+            .toLocalDateTime()
+
+        if (wakeMillis.isBefore(bedMillis)) {
+            wakeMillis = wakeMillis.plusDays(1)
+        }
+
+        val newSleep = Sleep(
+            wakeMillis
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            bedMillis
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            bedMillis
+                .toLocalDate()
+                .atStartOfDay()
+                .toInstant(ZoneId.systemDefault().rules.getOffset(Instant.now()))
+                .toEpochMilli(),
+            binding.ratingBarSleepDetailQuality.rating.toInt(),
+            binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+            Backendless.UserService.CurrentUser().userId
+        )
+
+        updateSleepRecord(sleep, newSleep)
+    }
+
+    private fun timeToEpoch(time: String, dateString: String): Long {
+        val newTime = "$dateString $time"
+        val formatter = DateTimeFormatter.ofPattern("EEEE MMM dd, yyyy hh:mm a")
+        val dateTime = LocalDateTime.parse(newTime, formatter)
+        val zonedDateTime = dateTime.atZone(ZoneId.systemDefault())
+        return zonedDateTime.toInstant().toEpochMilli()
     }
 
     private fun addSleepRecord(newRecord: Sleep) {
@@ -206,34 +218,33 @@ class SleepDetailActivity : AppCompatActivity() {
         })
     }
 
-    private fun updateSleepRecord(sleep: Sleep) {
-        val sleepRecord = sleep
-        sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
-
-        Backendless.Data.of(Sleep::class.java).save(sleepRecord, object: AsyncCallback<Sleep> {
-            override fun handleResponse(sleepRecord: Sleep) {
-                // set new fields based on user input
-                // sleepRecord.sleepDate = binding.dateInput.date
+    private fun updateSleepRecord(sleep: Sleep, newSleep: Sleep) {
+        Backendless.Data.of(Sleep::class.java).save(sleep, object : AsyncCallback<Sleep> {
+            override fun handleResponse(savedSleep: Sleep) {
+                savedSleep.wakeMillis = newSleep.wakeMillis
+                savedSleep.bedMillis = newSleep.bedMillis
+                savedSleep.sleepDateMillis = newSleep.sleepDateMillis
+                savedSleep.quality = binding.ratingBarSleepDetailQuality.rating.toInt()
+                savedSleep.notes = binding.editTextTextMultiLineSleepDetailNotes.text.toString()
                 Backendless.Data.of(Sleep::class.java)
-                    .save(sleepRecord, object : AsyncCallback<Sleep?> {
+                    .save(savedSleep, object : AsyncCallback<Sleep?> {
                         override fun handleResponse(response: Sleep?) {
-                            Log.d(SleepListActivity.TAG, "response: $response")
+                            Log.d(TAG, "handleResponse: successful update")
                             finish()
                         }
 
                         override fun handleFault(fault: BackendlessFault) {
-                            Log.d(SleepListActivity.TAG, "handleFault: ${fault.message}")
+                            Log.d(TAG, "handleFault: ${fault.code}")
                         }
                     })
             }
-
             override fun handleFault(fault: BackendlessFault) {
-                Log.d(SleepListActivity.TAG, "handleFault: ${fault.message}")
+                Log.d(TAG, "handleFault: ${fault.message}")
             }
         })
     }
 
-    fun setTime(time: LocalDateTime, timeFormatter: DateTimeFormatter, button: Button) {
+    private fun setTime(time: LocalDateTime, timeFormatter: DateTimeFormatter, button: Button) {
         val timePickerDialog = MaterialTimePicker.Builder()
             .setTimeFormat(TimeFormat.CLOCK_12H)
             .setHour(time.hour)
@@ -250,16 +261,16 @@ class SleepDetailActivity : AppCompatActivity() {
                 timePickerDialog.minute
             )
             button.text = timeFormatter.format(selectedTime)
-            when (button.id) {
+            when(button.id) {
                 binding.buttonSleepDetailBedTime.id -> {
                     bedTime = selectedTime
-                    if (wakeTime.toEpochSecond(UTC) < selectedTime.toEpochSecond(UTC)) {
+                    if(wakeTime.toEpochSecond(UTC) < selectedTime.toEpochSecond(UTC)) {
                         wakeTime = wakeTime.plusDays(1)
                     }
                 }
 
                 binding.buttonSleepDetailWakeTime.id -> {
-                    if (selectedTime.toEpochSecond(UTC) < bedTime.toEpochSecond(UTC)) {
+                    if(selectedTime.toEpochSecond(UTC) < bedTime.toEpochSecond(UTC)) {
                         selectedTime = selectedTime.plusDays(1)
                     }
                     wakeTime = selectedTime

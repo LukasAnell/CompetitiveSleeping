@@ -72,7 +72,7 @@ class SleepAdapter (var sleepList: MutableList<Sleep>): RecyclerView.Adapter<Sle
         // sets the actual hours slept textview
         val bedTime = LocalDateTime.ofEpochSecond(sleep.bedMillis / 1000, 0,
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
-        val wakeTime = LocalDateTime.ofEpochSecond(sleep.wakeMillis / 1000, 0,
+        val wakeTime = LocalDateTime.ofEpochSecond((sleep.wakeMillis) / 1000, 0,
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         holder.textViewHours.text = "${timeFormatter.format(bedTime)} - ${timeFormatter.format(wakeTime)}"

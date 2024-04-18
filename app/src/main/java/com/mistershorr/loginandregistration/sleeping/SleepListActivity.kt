@@ -34,6 +34,11 @@ class SleepListActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadDataFromBackendless()
+    }
+
     private fun refreshList() {
         val serverListAdapter = SleepAdapter(sleepList)
 
@@ -43,67 +48,8 @@ class SleepListActivity : AppCompatActivity() {
         serverListAdapter.notifyDataSetChanged()
     }
 
-    private fun updateSleepRecord() {
-        val sleepRecord = Sleep(
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            5,
-            "very okay",
-            null,
-            null
-        )
-        sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
-
-        Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep> {
-            override fun handleResponse(sleepRecord: Sleep) {
-                // set new fields based on user input
-                // sleepRecord.sleepDate = binding.dateInput.date
-                Backendless.Data.of(Sleep::class.java)
-                    .save(sleepRecord, object : AsyncCallback<Sleep?> {
-                        override fun handleResponse(response: Sleep?) {
-                            // Contact instance has been updated
-                        }
-
-                        override fun handleFault(fault: BackendlessFault) {
-                            Log.d(TAG, "handleFault: ${fault.message}")
-                        }
-                    })
-            }
-
-            override fun handleFault(fault: BackendlessFault) {
-                Log.d(TAG, "handleFault: ${fault.message}")
-            }
-        })
-    }
-
-    private fun addSleepRecord() {
-        val sleepRecord = Sleep(
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            System.currentTimeMillis(),
-            5,
-            "very okay",
-            null,
-            null
-        )
-        sleepRecord.ownerId = Backendless.UserService.CurrentUser().userId
-
-        // save object asynchronously
-        Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep?> {
-            override fun handleResponse(response: Sleep?) {
-                Log.d(TAG, "response: $response")
-            }
-
-            override fun handleFault(fault: BackendlessFault) {
-                // an error has occurred, the error code can be retrieved with fault.getCode()
-                Log.d(TAG, "handleFault: ${fault.message}")
-            }
-        })
-    }
-
     private fun loadDataFromBackendless() {
-        val userId = Backendless.UserService.CurrentUser().userId
+        val userId = Backendless.UserService.CurrentUser().userId!!
         val whereClause = "ownerId = '$userId'"
         val queryBuilder = DataQueryBuilder.create()
         queryBuilder.whereClause = whereClause
