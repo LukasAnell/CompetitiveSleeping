@@ -19,7 +19,6 @@ class SleepListActivity : AppCompatActivity() {
     companion object {
         const val TAG = "SleepListActivity"
     }
-
     private lateinit var binding: ActivitySleepListBinding
     private lateinit var sleepList: MutableList<Sleep>
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,5 +64,4 @@ class SleepListActivity : AppCompatActivity() {
             }
         })
     }
-
 }

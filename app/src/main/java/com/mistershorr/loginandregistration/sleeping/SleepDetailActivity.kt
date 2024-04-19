@@ -219,7 +219,7 @@ class SleepDetailActivity : AppCompatActivity() {
     }
 
     private fun updateSleepRecord(sleep: Sleep, newSleep: Sleep) {
-        Backendless.Data.of(Sleep::class.java).save(sleep, object : AsyncCallback<Sleep> {
+        Backendless.Data.of(Sleep::class.java).save(sleep, object: AsyncCallback<Sleep> {
             override fun handleResponse(savedSleep: Sleep) {
                 savedSleep.wakeMillis = newSleep.wakeMillis
                 savedSleep.bedMillis = newSleep.bedMillis

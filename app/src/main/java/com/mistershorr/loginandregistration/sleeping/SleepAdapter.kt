@@ -118,7 +118,7 @@ class SleepAdapter (var sleepList: MutableList<Sleep>): RecyclerView.Adapter<Sle
         Backendless.Data.of(Sleep::class.java).save(sleepRecord, object : AsyncCallback<Sleep?> {
             override fun handleResponse(sleepRecord: Sleep?) {
                 Backendless.Data.of(Sleep::class.java).remove(sleepRecord,
-                    object : AsyncCallback<Long?> {
+                    object: AsyncCallback<Long?> {
                         override fun handleResponse(response: Long?) {
                             Log.d(SleepListActivity.TAG, "Object Deleted")
                             sleepList.removeAt(position)
